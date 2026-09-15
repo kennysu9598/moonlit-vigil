@@ -1,0 +1,39 @@
+{
+  "recorded_at": "2026-09-15T16:37:45.772836-04:00",
+  "source": "https://kenney.nl/assets/impact-sounds",
+  "download": "https://kenney.nl/media/pages/assets/impact-sounds/87b4ddecda-1677589768/kenney_impact-sounds.zip",
+  "selection": "heavy=heavy metal; slash=light metal contact (not sword whoosh); magic=heavy punch/thick impact (not authentic drum). Selection based on author filenames, not listening.",
+  "listening_verified": false,
+  "assets": [
+    {
+      "file": "assets/audio/impact_heavy.ogg",
+      "source_member": "Audio/impactMetal_heavy_000.ogg",
+      "sha256": "e07045693e4a2b3d165c424e3dab4c781d9ff8880a386880ac89a51315d7f831",
+      "duration": 0.1676643990929705,
+      "sample_rate": 44100,
+      "peak": 0.8985482454299927,
+      "decoded": true,
+      "license": "CC0-1.0"
+    },
+    {
+      "file": "assets/audio/impact_slash.ogg",
+      "source_member": "Audio/impactMetal_light_000.ogg",
+      "sha256": "33b5e6e37c6e9d54e07bf5a89b12c76e879f40c1ea83cdd82714df1d6f9fec6d",
+      "duration": 0.35147392290249435,
+      "sample_rate": 44100,
+      "peak": 0.8951573967933655,
+      "decoded": true,
+      "license": "CC0-1.0"
+    },
+    {
+      "file": "assets/audio/impact_magic.ogg",
+      "source_member": "Audio/impactPunch_heavy_000.ogg",
+      "sha256": "b33a8f14068aec24ec69ba85e5e87fdc41228975f6a1a3e44a6e7d6fc3d9f8d8",
+      "duration": 0.6490249433106576,
+      "sample_rate": 44100,
+      "peak": 0.8945616483688354,
+      "decoded": true,
+      "license": "CC0-1.0"
+    }
+  ]
+}

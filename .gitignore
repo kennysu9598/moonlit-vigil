@@ -1,0 +1,14 @@
+.godot/
+*.import
+export_credentials.cfg
+build/
+dist/
+evidence/
+*.log
+*.zip
+*.pck
+*.exe
+.env
+.env.*
+.DS_Store
+__pycache__/

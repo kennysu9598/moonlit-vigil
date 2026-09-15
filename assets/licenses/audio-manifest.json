@@ -1,0 +1,84 @@
+{
+  "recorded_at": "2026-09-15T16:14:06.912008-04:00",
+  "assets": [
+    {
+      "path": "assets/audio/ui_select.ogg",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "source_member": "Audio/select_001.ogg",
+      "license": "CC0-1.0",
+      "sha256": "aec0c31ea934a35936ae0d2ab8fac8123c93aa5647f935853a58dbaf90278b7a",
+      "purpose": "ui_select",
+      "seconds": 0.04328798185941043,
+      "sample_rate": 44100,
+      "decoded": true
+    },
+    {
+      "path": "assets/audio/ui_confirm.ogg",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "source_member": "Audio/confirmation_001.ogg",
+      "license": "CC0-1.0",
+      "sha256": "063564703b6094d70718a3e787a55cc9141611e4ecd6b6637f8828f79b4a8c3a",
+      "purpose": "ui_confirm",
+      "seconds": 0.28984126984126984,
+      "sample_rate": 44100,
+      "decoded": true
+    },
+    {
+      "path": "assets/audio/ui_error.ogg",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "source_member": "Audio/error_001.ogg",
+      "license": "CC0-1.0",
+      "sha256": "46e67425d16339772e8d328fb36a49426c9467418686e11beeb71ff84b0f6433",
+      "purpose": "ui_error",
+      "seconds": 0.1645578231292517,
+      "sample_rate": 44100,
+      "decoded": true
+    },
+    {
+      "path": "assets/audio/hit.ogg",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "source_member": "Audio/bong_001.ogg",
+      "license": "CC0-1.0",
+      "sha256": "d21d0f0b782445db579d11e2506b24cd1ac9d664ee33aeaf807761aa7b6fd710",
+      "purpose": "hit",
+      "seconds": 0.12283446712018141,
+      "sample_rate": 44100,
+      "decoded": true
+    },
+    {
+      "path": "assets/audio/heal.ogg",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "source_member": "Audio/glass_001.ogg",
+      "license": "CC0-1.0",
+      "sha256": "183eebee20eb0a532b0b85104d139cbf2673eb66d95c3cc733ac9ea98362e7e8",
+      "purpose": "heal",
+      "seconds": 0.27843537414965985,
+      "sample_rate": 44100,
+      "decoded": true
+    },
+    {
+      "path": "assets/audio/shield.ogg",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "source_member": "Audio/pluck_001.ogg",
+      "license": "CC0-1.0",
+      "sha256": "be97ec4893a02d6eccfb678daa76c83e34cb2583b834ec2593d2641def739fa4",
+      "purpose": "shield",
+      "seconds": 0.10242630385487528,
+      "sample_rate": 44100,
+      "decoded": true
+    },
+    {
+      "path": "assets/audio/moon_ambience_loop.wav",
+      "source": "Original procedural composition by Codex for Moonlit Vigil; no third-party recordings",
+      "license": "Project MIT grant; no third-party samples",
+      "sha256": "3a015f72a84f91e94ccc91d9970cf5590025d1f28669dc0bb58439203cfc5c53",
+      "purpose": "24-second seamless background ambience; enable looping on import",
+      "seconds": 24.0,
+      "sample_rate": 22050,
+      "decoded": true,
+      "peak": 0.211090087890625,
+      "auditioned": false
+    }
+  ],
+  "verification": "All seven files decoded by libsndfile/soundfile; no listening review; engine integration belongs to root."
+}
