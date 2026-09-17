@@ -14,6 +14,10 @@ window/size/window_width_override=1280
 window/size/window_height_override=720
 window/stretch/mode="canvas_items"
 
+[autoload]
+
+AudioMgr="*res://scripts/audio_manager.gd"
+
 [rendering]
 renderer/rendering_method="gl_compatibility"
 textures/default_filters/use_nearest_mipmap_filter=false

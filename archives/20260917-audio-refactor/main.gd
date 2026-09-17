@@ -27,6 +27,8 @@ var skill_buttons: Array[Button] = []
 var cast_button: Button
 var help_label: Label
 var queue_label: Label
+var music: AudioStreamPlayer
+var sfx: AudioStreamPlayer
 var selected_skill := 0
 var selected_target := 3
 var busy := true
@@ -195,7 +197,17 @@ func _ready() -> void:
 	banner.add_theme_color_override("font_shadow_color",Color.BLACK)
 	banner.add_theme_constant_override("shadow_offset_x",3)
 	banner.add_theme_constant_override("shadow_offset_y",3)
-	AudioMgr.play_music("ambience")
+	music=AudioStreamPlayer.new()
+	add_child(music)
+	var ambience=load("res://assets/audio/moon_ambience_loop.wav") as AudioStreamWAV
+	ambience.loop_mode=AudioStreamWAV.LOOP_FORWARD
+	ambience.loop_end=529200
+	music.stream=ambience
+	music.volume_db=-18
+	music.play()
+	sfx=AudioStreamPlayer.new()
+	add_child(sfx)
+	sfx.volume_db=-10
 	var stamp := Time.get_datetime_string_from_system().replace(":","-")
 	var folder := "user://battle-evidence/"+stamp
 	evidence_dir=ProjectSettings.globalize_path(folder)
@@ -287,7 +299,12 @@ func _start_battle() -> void:
 		actor.z_index=10+int(actor.home.y/20)
 		actors.append(actor)
 	phase="battle"
-	AudioMgr.play_music("battle")
+	var battle_track=load("res://assets/audio/battle_theme.ogg") as AudioStreamOggVorbis
+	battle_track.loop=true
+	music.stream=battle_track
+	music.volume_db=-14
+	music.play()
+	music.stream_paused=mute
 	hud.show()
 	_sound("ui_confirm")
 	_log("battle_start",{"run":run_number,"seed":42})
@@ -371,8 +388,6 @@ func _cast(skill_index: int,target: int) -> void:
 	var themes: Array=[ ["slash","fire","fire"], ["moonbolt","heal","shield"], ["slash","stun","dragon"], ["raven","raven_fire","raven"], ["spirit","shield","miasma"], ["quake","charge","boss"] ]
 	var kind: String=themes[id][skill_index]
 	last_kind=kind
-	var cast_sfx: String={"fire":"cast_fire","heal":"cast_heal","shield":"cast_shield","stun":"cast_stun"}.get(kind,"")
-	if cast_sfx!="":AudioMgr.play_sfx(cast_sfx)
 	if result.ultimate:
 		_environment(kind,.65)
 		var portrait_rect: Rect2=actors[id].regions[1]
@@ -411,8 +426,8 @@ func _show_events(events: Array) -> void:
 			"heal":fx.floating(actors[id].position,"+"+str(e.value),Color("89ffcb"));_sound("heal")
 			"shield":fx.floating(actors[id].position,"护盾 +"+str(e.value),Color("87dbff"));_sound("shield")
 			"stun":fx.floating(actors[id].position,"封魂",GOLD)
-			"interrupt":fx.floating(actors[id].position,"蓄力打断",GOLD);AudioMgr.play_sfx("charge_interrupt")
-			"charge":fx.floating(actors[id].position,"厄月蓄力",Color("d69aff"));AudioMgr.play_sfx("charge_start")
+			"interrupt":fx.floating(actors[id].position,"蓄力打断",GOLD)
+			"charge":fx.floating(actors[id].position,"厄月蓄力",Color("d69aff"))
 			"enrage":fx.floating(actors[id].position,"荒祟 · 狂暴",Color("ff7777"))
 
 func _sync(units: Array) -> void:
@@ -477,7 +492,6 @@ func _finish() -> void:
 	_label(overlay,"战斗结束  ·  "+str(combat.action_count)+" 次行动  ·  "+str(combat.round_index)+" 轮",Vector2(415,366),Vector2(465,32),16,Color("9cb6c1"))
 	var again:=_button(overlay,"再守一夜  ·  R",Rect2(415,430,450,62),22)
 	again.pressed.connect(_start_battle)
-	AudioMgr.play_music("win" if combat.winner==0 else "lose")
 	_capture("result")
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -512,10 +526,13 @@ func _unhandled_input(event: InputEvent) -> void:
 func _toggle_mute() -> void:
 	mute=not mute
 	sound_button.text="声音 · 关" if mute else "声音 · 开"
-	AudioMgr.set_muted(mute)
+	music.stream_paused=mute
+	sfx.volume_db=-80 if mute else -10
 
 func _sound(name_value: String) -> void:
-	AudioMgr.play_sfx(name_value)
+	if mute:return
+	sfx.stream=load("res://assets/audio/"+name_value+".ogg")
+	sfx.play()
 
 func _process(delta: float) -> void:
 	elapsed+=delta
