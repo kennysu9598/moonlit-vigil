@@ -1,5 +1,5 @@
 extends Node
-## AudioMgr（autoload）——音频总线 + 双通道音乐 crossfade + 8 路音效池 + 语音单通道 + 总线静音。
+## AudioMgr（autoload）——音频总线 + 双通道音乐 crossfade + 8 路音效池 + 总线静音。
 ## 总线在代码内建（Music/SFX 挂 Master），不依赖 default_bus_layout.tres。
 
 const MUSIC := {
@@ -11,8 +11,6 @@ const MUSIC := {
 const MUSIC_DB := {"ambience": -18.0, "battle": -14.0, "win": -14.0, "lose": -14.0}
 const POOL_SIZE := 8
 const FADE_DB := -50.0
-const VOICE_UNITS := ["feiyu", "zaiya", "chengling", "dengyan", "xuanren", "huangshuo"]
-const VOICE_DB := -2.0
 
 var music_stream_assigns := 0
 var music_bus := -1
@@ -23,7 +21,6 @@ var _current_key := ""
 var _pool: Array[AudioStreamPlayer] = []
 var _next := 0
 var _fades := {}
-var _voice: AudioStreamPlayer
 
 func _ready() -> void:
 	music_bus = _ensure_bus("Music")
@@ -38,10 +35,6 @@ func _ready() -> void:
 		p.bus = "SFX"
 		add_child(p)
 		_pool.append(p)
-	_voice = AudioStreamPlayer.new()
-	_voice.bus = "SFX"
-	_voice.volume_db = VOICE_DB
-	add_child(_voice)
 
 func play_music(key: String, fade := 0.8) -> void:
 	if key == _current_key or not MUSIC.has(key):return
@@ -81,19 +74,6 @@ func play_sfx(name_value: String, pitch_jitter := 0.06) -> void:
 	p.stream = stream
 	p.pitch_scale = 1.0 + randf_range(-pitch_jitter, pitch_jitter)
 	p.play()
-
-func play_voice(name_value: String) -> void:
-	var path := "res://assets/audio/voice/" + name_value + ".ogg"
-	if not ResourceLoader.exists(path):return
-	var stream: AudioStream = load(path)
-	if stream == null:return
-	_voice.stop()
-	_voice.stream = stream
-	_voice.play()
-
-func play_unit_voice(unit_idx: int, action: String) -> void:
-	if unit_idx < 0 or unit_idx >= VOICE_UNITS.size():return
-	play_voice(VOICE_UNITS[unit_idx] + "_" + action)
 
 func set_muted(muted: bool) -> void:
 	AudioServer.set_bus_mute(music_bus, muted)
