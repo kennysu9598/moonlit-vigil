@@ -1,0 +1,24 @@
+RPG Sound Pack (OpenGameArt)
+----------------------------
+
+Author: artisticdude
+Source page: https://opengameart.org/content/rpg-sound-pack
+Archive: rpg_sound_pack.zip (95 WAV files)
+
+License: Creative Commons Zero (CC0 1.0)
+http://creativecommons.org/publicdomain/zero/1.0/
+
+Author statement on the source page (comments):
+"you can do pretty much whatever you want with them, including using
+them in a commercial project, without having to give attribution"
+
+Attribution is not required; crediting artisticdude is appreciated.
+
+Files used in this project (converted WAV -> Ogg Vorbis q4 with
+loudnorm I=-14:TP=-1.5:LRA=11, 48 kHz):
+- assets/audio/cast_fire.ogg        <- battle/spell.wav
+- assets/audio/cast_heal.ogg        <- inventory/bubble.wav
+- assets/audio/cast_shield.ogg      <- inventory/metal-ringing.wav
+- assets/audio/cast_stun.ogg        <- battle/magic1.wav
+- assets/audio/charge_start.ogg     <- NPC/giant/giant2.wav
+- assets/audio/hit_poison.ogg       <- NPC/slime/slime1.wav

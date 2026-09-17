@@ -12,3 +12,5 @@ evidence/
 .env.*
 .DS_Store
 __pycache__/
+
+assets/_incoming-*/
