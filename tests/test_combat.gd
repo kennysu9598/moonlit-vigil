@@ -63,6 +63,10 @@ func _init() -> void:
 		check(c.winner == 1 - loser and not c.perform(0, 3).ok, "terminal winner")
 	c.start()
 	check(c.winner == -1 and c.action_count == 0 and c.energy == 3 and c.units[0].burn == 0 and c.units[5].hp == 470, "restart reset")
+	c.start()
+	check(c._turn_order == [0, 3, 2, 4, 1, 5], "speed order derived")
+	c._damage(5, 235, [], true)
+	check(c.units[5].enraged and c.units[5].speed == 70 and c._turn_order == [0, 3, 2, 4, 5, 1], "enrage order shift")
 	var wins: int = 0
 	var total: int = 0
 	var min_actions: int = 999

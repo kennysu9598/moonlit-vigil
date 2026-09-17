@@ -8,7 +8,7 @@ var energy: int = 3
 var round_index: int = 1
 var action_count: int = 0
 var _rng := RandomNumberGenerator.new()
-var _turn_order: Array[int] = []
+var _order: Array[int] = [0, 3, 2, 4, 1, 5]
 var _cursor: int = 0
 var _begun: bool = false
 var _spent: bool = false
@@ -32,20 +32,6 @@ func start(seed_value: int = 42) -> void:
 	_begun = false
 	_spent = false
 	_begin_result = {}
-	_rebuild_turn_order()
-
-func _rebuild_turn_order() -> void:
-	_turn_order = []
-	for id in range(units.size()):
-		_turn_order.append(id)
-	_turn_order.sort_custom(func(a: int, b: int) -> bool:
-		var sa := int(units[a].speed)
-		var sb := int(units[b].speed)
-		if sa != sb:
-			return sa > sb
-		return a < b)
-	var index := _turn_order.find(current_id)
-	_cursor = 0 if index < 0 else index
 
 func _skill(title: String, description: String, cost: int, target: String, kind: String) -> Dictionary:
 	return {"name": title, "description": description, "cost": cost, "target": target, "kind": kind}
@@ -196,8 +182,6 @@ func _damage(id: int, amount: int, events: Array, ignore_shield: bool = false) -
 	elif id == 5 and unit.hp <= unit.max_hp / 2 and not unit.enraged:
 		unit.enraged = true
 		unit.atk += 7
-		unit.speed += 20
-		_rebuild_turn_order()
 		_event(events, "enrage", id, 1)
 
 func _heal(id: int, amount: int, events: Array) -> void:
@@ -231,10 +215,10 @@ func _check_winner() -> void:
 
 func advance() -> void:
 	if winner != -1 or not _spent: return
-	for unused in range(_turn_order.size()):
-		_cursor = (_cursor + 1) % _turn_order.size()
+	for unused in range(6):
+		_cursor = (_cursor + 1) % _order.size()
 		if _cursor == 0: round_index += 1
-		current_id = _turn_order[_cursor]
+		current_id = _order[_cursor]
 		if units[current_id].alive: break
 	_begun = false
 	_spent = false
