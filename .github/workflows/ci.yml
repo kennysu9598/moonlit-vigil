@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  headless-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Cache Godot 4.7.2 binary
+        uses: actions/cache@v4
+        id: godot-cache
+        with:
+          path: ~/godot
+          key: godot-4.7.2-stable-linux-x86_64
+
+      - name: Download Godot 4.7.2 (official release binary)
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p "$HOME/godot"
+          curl -L --fail --retry 3 -o /tmp/godot.zip \
+            "https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip"
+          unzip -o /tmp/godot.zip -d "$HOME/godot"
+          mv "$HOME/godot/Godot_v4.7.2-stable_linux.x86_64" "$HOME/godot/godot"
+          chmod +x "$HOME/godot/godot"
+          "$HOME/godot/godot" --version
+
+      - name: Import project
+        run: ~/godot/godot --headless --editor --path . --import --quit
+
+      - name: Logic test - combat
+        run: ~/godot/godot --headless --path . --script res://tests/test_combat.gd
+
+      - name: Logic test - auto
+        run: ~/godot/godot --headless --path . --script res://tests/test_auto.gd
+
+      - name: Logic test - art/fx
+        run: ~/godot/godot --headless --path . --script res://tests/test_art_fx.gd

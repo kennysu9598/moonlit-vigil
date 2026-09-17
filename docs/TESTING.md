@@ -11,6 +11,8 @@ godot --headless --path . --script res://tests/test_art_fx.gd
 
 Expected current results: combat failures=0 over 100 seeds; auto failures=0 over 100 seeds; art mesh/freeze/reset/expiry tests PASS. Engine errors must also be checked; a process exit code alone is insufficient.
 
+Continuous integration runs the same import and the three logic tests headlessly (Ubuntu, Godot 4.7.2) on every push and pull request; see `.github/workflows/ci.yml`.
+
 For real windowed motion evidence (writes under Godot user data):
 
 ```sh
