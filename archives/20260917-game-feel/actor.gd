@@ -34,11 +34,6 @@ var rotation_tween: Tween
 var death_tween: Tween
 var pose := 0
 var health_layer: Node2D
-var base_scale := Vector2.ONE
-var hurt_pulse := 0.0
-var idle_tween: Tween
-var pulse_tween: Tween
-var jitter_tween: Tween
 
 func setup(data: Dictionary, p_font: Font, atlas: Texture2D, p_row: int) -> void:
 	unit = data.duplicate(true)
@@ -74,10 +69,8 @@ func setup(data: Dictionary, p_font: Font, atlas: Texture2D, p_row: int) -> void
 		# Scale is derived once from idle anatomy; never resized for attack pose.
 		var idle_rect: Rect2 = regions[0]
 		var idle_foot: Vector2 = feet[0]
-		base_scale = Vector2.ONE * sprite_height / (idle_foot.y - idle_rect.position.y)
-		sprite.scale = base_scale
+		sprite.scale = Vector2.ONE * sprite_height / (idle_foot.y - idle_rect.position.y)
 		set_pose(0)
-		_start_idle_breath()
 	elapsed = float(unit.id) * 1.7
 	queue_redraw()
 
@@ -87,22 +80,14 @@ func sync(data: Dictionary) -> void:
 	if not bool(unit.alive):
 		if hurt_tween != null: hurt_tween.kill()
 		if rotation_tween != null: rotation_tween.kill()
-		if pulse_tween != null: pulse_tween.kill()
-		if idle_tween != null: idle_tween.kill()
 		sprite.rotation = 0.0
 		if was_alive:
 			if death_tween != null: death_tween.kill()
-			death_tween = create_tween().set_parallel(true)
-			death_tween.tween_property(sprite, "modulate", Color(0.45,0.46,0.6,0.35), .35)
-			death_tween.tween_property(sprite, "scale", base_scale*0.85, .35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-			death_tween.tween_property(sprite, "rotation", -.14 if int(unit.team)==0 else .14, .35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-			death_tween.tween_property(sprite, "position:y", pose_base.y+10.0, .35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			death_tween = create_tween()
+			death_tween.tween_property(sprite, "modulate", Color(0.45,0.46,0.6,0.26), .4)
 	elif not was_alive:
 		if death_tween != null: death_tween.kill()
 		sprite.modulate = Color.WHITE
-		sprite.rotation = 0.0
-		sprite.scale = base_scale
-		_start_idle_breath()
 	queue_redraw()
 
 func set_pose(value: int) -> void:
@@ -111,7 +96,7 @@ func set_pose(value: int) -> void:
 		var rect: Rect2 = regions[pose]
 		var foot: Vector2 = feet[pose]
 		sprite.region_rect = rect
-		pose_base = (rect.position + rect.size * 0.5 - foot) * base_scale
+		pose_base = (rect.position + rect.size * 0.5 - foot) * sprite.scale
 		sprite.position = pose_base
 
 func _process(delta: float) -> void:
@@ -151,9 +136,7 @@ func _draw_health() -> void:
 	var name_text := str(unit.name)
 	health_layer.draw_string(font,Vector2(-font.get_string_size(name_text,HORIZONTAL_ALIGNMENT_LEFT,-1,14).x/2,y+14),name_text,HORIZONTAL_ALIGNMENT_LEFT,-1,14,ink)
 	health_layer.draw_rect(Rect2(-50,y+21,100,5),Color(.1,.16,.23))
-	var bar := Color(.3,.85,.72) if int(unit.team)==0 else Color(.9,.37,.38)
-	if hurt_pulse>0.0:bar=bar.lerp(Color(1,.22,.18),hurt_pulse)
-	health_layer.draw_rect(Rect2(-50,y+21,100*health,5),bar)
+	health_layer.draw_rect(Rect2(-50,y+21,100*health,5),Color(.3,.85,.72) if int(unit.team)==0 else Color(.9,.37,.38))
 	if int(unit.get("shield",0))>0:
 		health_layer.draw_rect(Rect2(-50,y+28,minf(100,float(unit.shield)/float(unit.max_hp)*100),3),Color(.45,.77,1))
 	var tags := ""
@@ -175,57 +158,33 @@ func hit_test(point: Vector2) -> bool:
 
 func strike(target: Vector2, melee: bool) -> void:
 	acting=true
-	_stop_idle_breath()
 	var direction := 1.0 if int(unit.team)==0 else -1.0
 	var t := create_tween()
-	t.tween_property(self,"position",home+Vector2(-12*direction,0),.06).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	t.tween_property(self,"position",home+Vector2(-12*direction,0),.12).set_trans(Tween.TRANS_QUAD)
 	if melee:
-		t.tween_property(self,"position",target+Vector2(-100*direction,0),.08).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_IN)
+		t.tween_property(self,"position",target+Vector2(-100*direction,0),.22).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	else:
-		t.tween_property(sprite,"position:y",pose_base.y-12,.08).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_IN)
+		t.tween_property(sprite,"position:y",pose_base.y-12,.22)
 	await t.finished
 	set_pose(1)
 
 func return_home() -> void:
 	set_pose(0)
 	var t := create_tween().set_parallel(true)
-	t.tween_property(self,"position",home,.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	t.tween_property(sprite,"position",pose_base,.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	t.tween_property(self,"position",home,.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	t.tween_property(sprite,"position",pose_base,.3)
 	await t.finished
 	set_pose(0)
 	acting=false
-	_start_idle_breath()
 
 func hurt() -> void:
 	if not bool(unit.get("alive", false)):
 		return
 	if hurt_tween != null: hurt_tween.kill()
-	if jitter_tween != null: jitter_tween.kill()
-	if pulse_tween != null: pulse_tween.kill()
+	if rotation_tween != null: rotation_tween.kill()
 	hurt_tween = create_tween()
-	hurt_tween.tween_property(sprite,"modulate",Color(8,4,4),.05)
-	hurt_tween.tween_property(sprite,"modulate",Color.WHITE,.12)
-	var base: Vector2 = position
-	jitter_tween = create_tween()
-	for i in range(3):
-		jitter_tween.tween_property(self,"position",base+Vector2.from_angle(randf()*TAU)*3.0,.05)
-	jitter_tween.tween_property(self,"position",base,.05)
-	pulse_tween = create_tween()
-	pulse_tween.tween_method(_set_hurt_pulse,1.0,0.0,.18)
-
-func _set_hurt_pulse(value: float) -> void:
-	hurt_pulse=value
-	health_layer.queue_redraw()
-
-func _start_idle_breath() -> void:
-	if sprite==null:return
-	if idle_tween != null: idle_tween.kill()
-	sprite.scale=base_scale
-	idle_tween=create_tween().set_loops()
-	idle_tween.tween_property(sprite,"scale:y",base_scale.y*1.015,1.2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	idle_tween.tween_property(sprite,"scale:y",base_scale.y,1.2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-
-func _stop_idle_breath() -> void:
-	if idle_tween != null: idle_tween.kill()
-	idle_tween=null
-	if sprite!=null:sprite.scale=base_scale
+	hurt_tween.tween_property(sprite,"modulate",Color(1.6,.5,.45),.05)
+	hurt_tween.tween_property(sprite,"modulate",Color.WHITE,.16)
+	rotation_tween = create_tween()
+	rotation_tween.tween_property(sprite,"rotation",-.09 if int(unit.team)==0 else .09,.07)
+	rotation_tween.tween_property(sprite,"rotation",0.0,.2)

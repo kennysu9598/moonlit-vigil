@@ -43,8 +43,8 @@ func play(kind: String, origin: Vector2, targets: Array[Vector2], power: float =
 		queue_redraw()
 		set_process(not _effects.is_empty() or not _floats.is_empty())
 
-func floating(pos: Vector2, text: String, color: Color, crit: bool = false) -> void:
-	_floats.append({"pos": pos, "text": text, "color": color, "age": 0.0, "crit": crit})
+func floating(pos: Vector2, text: String, color: Color) -> void:
+	_floats.append({"pos": pos, "text": text, "color": color, "age": 0.0})
 	set_process(true)
 
 func _process(delta: float) -> void:
@@ -85,24 +85,10 @@ func _draw() -> void:
 	var face: Font = font if font != null else ThemeDB.fallback_font
 	for f in _floats:
 		var age: float = f.age
-		var crit: bool = bool(f.get("crit", false))
-		var pop: float = clampf(age / 0.1, 0.0, 1.0)
-		var back_c := 1.70158
-		var back: float = 1.0 + (back_c + 1.0) * pow(pop - 1.0, 3.0) + back_c * pow(pop - 1.0, 2.0)
-		var sc: float = 0.6 + 0.55 * back
-		if crit:
-			var b := age - 0.12
-			if b > 0.0: sc += absf(sin(b * PI / 0.24)) * 0.16 * exp(-b * 4.5)
-		var rise: float = 83.0 * (1.0 - pow(1.0 - clampf(age / 1.15, 0.0, 1.0), 2.0))
-		var p: Vector2 = f.pos + Vector2(-35, -110 - rise)
-		var fade_x := clampf((1.15 - age) / 0.35, 0.0, 1.0)
-		var a: float = fade_x * fade_x
-		var size := 40 if crit else 33
-		var ink_color: Color = f.color.lightened(0.28) if crit else f.color
-		draw_set_transform(p, 0.0, Vector2.ONE * sc)
-		draw_string_outline(face, Vector2.ZERO, f.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 6, _ink(Color("182032"), a))
-		draw_string(face, Vector2.ZERO, f.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, _ink(ink_color, a))
-		draw_set_transform(Vector2.ZERO)
+		var p: Vector2 = f.pos + Vector2(-35, -110 - age * 72)
+		var a: float = minf(1.0, (1.15 - age) * 3.0)
+		draw_string_outline(face, p, f.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 33, 6, _ink(Color("182032"), a))
+		draw_string(face, p, f.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 33, _ink(f.color, a))
 
 func _sigil(p: Vector2, radius: float, rotation_angle: float, c: Color, alpha: float) -> void:
 	for ring in range(2):

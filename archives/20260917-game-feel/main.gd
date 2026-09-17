@@ -58,7 +58,6 @@ var last_kind:="slash"
 var terrain: Node2D
 var models: Node2D
 var last_points: Array[Vector2]=[]
-var _last_hitstop := -10.0
 
 func _portrait(parent: Node,pos: Vector2,size_value: Vector2,id: int) -> TextureRect:
 	var icon:=TextureRect.new()
@@ -291,9 +290,6 @@ func _start_battle() -> void:
 	AudioMgr.play_music("battle")
 	hud.show()
 	_sound("ui_confirm")
-	AudioMgr.play_unit_voice(0, "entrance")
-	get_tree().create_timer(0.9).timeout.connect(func():
-		if phase=="battle":AudioMgr.play_unit_voice(5, "entrance"))
 	_log("battle_start",{"run":run_number,"seed":42})
 	_next_turn()
 
@@ -376,7 +372,6 @@ func _cast(skill_index: int,target: int) -> void:
 	var kind: String=themes[id][skill_index]
 	last_kind=kind
 	var cast_sfx: String={"fire":"cast_fire","heal":"cast_heal","shield":"cast_shield","stun":"cast_stun"}.get(kind,"")
-	AudioMgr.play_unit_voice(id, "cast")
 	if cast_sfx!="":AudioMgr.play_sfx(cast_sfx)
 	if result.ultimate:
 		_environment(kind,.65)
@@ -404,16 +399,6 @@ func _impact() -> void:
 	_show_events(pending.events)
 	_sync(pending.units)
 	_refresh_hud()
-	_hit_stop()
-
-func _hit_stop() -> void:
-	if phase!="battle" or bool(pending.get("ultimate",false)):return
-	var now := Time.get_ticks_msec()/1000.0
-	if now-_last_hitstop<0.3:return
-	_last_hitstop=now
-	Engine.time_scale=0.05
-	await get_tree().create_timer(0.05,true,false,true).timeout
-	if phase=="battle":Engine.time_scale=float(speed)
 
 func _show_events(events: Array) -> void:
 	for e in events:
@@ -421,13 +406,11 @@ func _show_events(events: Array) -> void:
 		if id<0 or id>=actors.size():continue
 		match str(e.type):
 			"damage":
-				fx.floating(actors[id].position,str(e.value),Color("ffe3b8"),bool(pending.get("ultimate",false)))
+				fx.floating(actors[id].position,str(e.value),Color("ffe3b8"))
 				actors[id].hurt()
-				AudioMgr.play_unit_voice(id, "hurt")
 			"heal":fx.floating(actors[id].position,"+"+str(e.value),Color("89ffcb"));_sound("heal")
 			"shield":fx.floating(actors[id].position,"护盾 +"+str(e.value),Color("87dbff"));_sound("shield")
 			"stun":fx.floating(actors[id].position,"封魂",GOLD)
-			"death":AudioMgr.play_unit_voice(id, "death")
 			"interrupt":fx.floating(actors[id].position,"蓄力打断",GOLD);AudioMgr.play_sfx("charge_interrupt")
 			"charge":fx.floating(actors[id].position,"厄月蓄力",Color("d69aff"));AudioMgr.play_sfx("charge_start")
 			"enrage":fx.floating(actors[id].position,"荒祟 · 狂暴",Color("ff7777"))
@@ -440,11 +423,8 @@ func _refresh_hud() -> void:
 	var actor: Dictionary=combat.units[combat.current_id]
 	turn_label.text=("妖群行动" if actor.team==1 else "轮到 "+str(actor.name))+"  ·  第 "+str(combat.round_index)+" 轮"
 	var order: PackedStringArray=[]
-	var turn_order: Array = combat._turn_order
-	for step in range(turn_order.size()):
-		var oid: int = int(turn_order[(combat._cursor+step)%turn_order.size()])
-		if combat.units[oid].alive:
-			order.append(("▶"+str(combat.units[oid].name)) if step==0 else str(combat.units[oid].name))
+	for n in [0,3,2,4,1,5]:
+		if combat.units[n].alive:order.append(str(combat.units[n].name))
 	queue_label.text="行动顺序   "+" → ".join(order)
 	energy_label.text="灵火  "+"◆".repeat(combat.energy)+"◇".repeat(8-combat.energy)
 	info_label.text=str(actor.name)+(" · 妖群" if actor.team==1 else " · 守夜人")
@@ -497,13 +477,7 @@ func _finish() -> void:
 	_label(overlay,"战斗结束  ·  "+str(combat.action_count)+" 次行动  ·  "+str(combat.round_index)+" 轮",Vector2(415,366),Vector2(465,32),16,Color("9cb6c1"))
 	var again:=_button(overlay,"再守一夜  ·  R",Rect2(415,430,450,62),22)
 	again.pressed.connect(_start_battle)
-	var living_winners: Array[int]=[]
-	for u in combat.units:
-		if u.alive and int(u.team)==combat.winner:living_winners.append(int(u.id))
-	if not living_winners.is_empty():
-		AudioMgr.play_unit_voice(living_winners.pick_random(),"victory" if combat.winner==0 else "defeat")
-	get_tree().create_timer(0.3).timeout.connect(func():
-		AudioMgr.play_music("win" if combat.winner==0 else "lose"))
+	AudioMgr.play_music("win" if combat.winner==0 else "lose")
 	_capture("result")
 
 func _unhandled_input(event: InputEvent) -> void:
