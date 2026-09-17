@@ -15,10 +15,17 @@ them in a commercial project, without having to give attribution"
 Attribution is not required; crediting artisticdude is appreciated.
 
 Files used in this project (converted WAV -> Ogg Vorbis q4 with
-loudnorm I=-14:TP=-1.5:LRA=11, 48 kHz):
-- assets/audio/cast_fire.ogg        <- battle/spell.wav
-- assets/audio/cast_heal.ogg        <- inventory/bubble.wav
-- assets/audio/cast_shield.ogg      <- inventory/metal-ringing.wav
-- assets/audio/cast_stun.ogg        <- battle/magic1.wav
-- assets/audio/charge_start.ogg     <- NPC/giant/giant2.wav
+loudnorm I=-14:TP=-1.5:LRA=11, 48 kHz; member list updated by the
+2026-09-17 v0.6.0 battle-SFX redo, previous picks archived under
+assets/audio/_archive-20260917/sfx-v1/):
+- assets/audio/heal.ogg             <- inventory/beads.wav
+- assets/audio/shield.ogg           <- inventory/metal-ringing.wav
+- assets/audio/hit.ogg              <- inventory/cloth-heavy.wav
+- assets/audio/impact_magic.ogg     <- battle/magic1.wav
+- assets/audio/cast_fire.ogg        <- battle/sword-unsheathe5.wav
+- assets/audio/cast_heal.ogg        <- inventory/bubble3.wav
+- assets/audio/cast_shield.ogg      <- inventory/armor-light.wav
+- assets/audio/cast_stun.ogg        <- battle/spell.wav (trimmed -t 1.5 from 3.25 s)
+- assets/audio/charge_start.ogg     <- NPC/ogre/ogre4.wav
+- assets/audio/charge_interrupt.ogg <- inventory/metal-small2.wav
 - assets/audio/hit_poison.ogg       <- NPC/slime/slime1.wav
