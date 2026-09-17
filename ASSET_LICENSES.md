@@ -13,6 +13,7 @@ The root MIT license covers project-authored code, documentation, procedural amb
 | `assets/audio/battle_theme.ogg`, `win_theme.ogg`, `lose_theme.ogg` | 本项目 AI-music 产线，ACE-Step 1.5（MIT 模型）生成，项目原创（source masters: AI-music/30_Demo/2026-09-17-battle-bgm-v1 A-夜战-v1 / B-凯旋-v1 / C-败北-v1, 320k MP3, converted to Ogg Vorbis q5） | Project MIT grant |
 | `assets/audio/cast_fire.ogg`, `cast_heal.ogg`, `cast_shield.ogg`, `cast_stun.ogg`, `charge_start.ogg`, `hit_poison.ogg` | [RPG Sound Pack](https://opengameart.org/content/rpg-sound-pack) — artisticdude; converted WAV to Ogg Vorbis (loudnorm, 48 kHz); member mapping in `assets/licenses/OGA-RPG-SoundPack-CC0.txt` | CC0-1.0 |
 | `assets/audio/charge_interrupt.ogg` | [Kenney RPG Audio](https://kenney.nl/assets/rpg-audio) (`Audio/metalClick.ogg`), converted to Ogg Vorbis (loudnorm, 48 kHz) | CC0-1.0 |
+| `assets/audio/voice/*.ogg` | 本项目 edge-tts 合成（微软神经语音 zh-CN-* Neural 声线 + 原创台词），项目原创使用；生成方式与复现步骤见 `assets/audio/voice/README.md` 和 `docs/voice-design-20260917.md` | Project MIT grant |
 | `assets/fonts/cjk.ttf` | [Noto Sans SC / Google Fonts](https://github.com/google/fonts/tree/main/ofl/notosanssc), unmodified variable font; font metadata retained | SIL OFL-1.1 |
 | Godot runtime in Windows download only | [Godot Engine](https://godotengine.org/license/) | MIT + bundled dependency notices |
 
