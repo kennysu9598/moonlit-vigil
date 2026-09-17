@@ -1,17 +1,6 @@
 class_name MoonActor
 extends Node2D
 
-signal shield_gained(pos: Vector2)
-signal shield_broken(pos: Vector2)
-
-const ShieldShader = preload("res://scripts/shield_outline.gdshader")
-# v0.6.0 action feel (R7): tiered wind-up, hit displacement, dash ghosts and a
-# persistent fallen death pose. Values frozen by the design table.
-const WINDUP: Array[float] = [0.06, 0.09, 0.14]
-const PUSH: Array[float] = [5.0, 15.0, 24.0]
-const DEATH_FADE := Color(0.52, 0.54, 0.66, 0.35)
-const SHIELD_MAX := 60.0
-
 var unit: Dictionary = {}
 var font: Font
 var selected := false
@@ -50,8 +39,6 @@ var hurt_pulse := 0.0
 var idle_tween: Tween
 var pulse_tween: Tween
 var jitter_tween: Tween
-var shield_fill := 0.0
-var shield_mat: ShaderMaterial
 
 func setup(data: Dictionary, p_font: Font, atlas: Texture2D, p_row: int) -> void:
 	unit = data.duplicate(true)
@@ -96,9 +83,7 @@ func setup(data: Dictionary, p_font: Font, atlas: Texture2D, p_row: int) -> void
 
 func sync(data: Dictionary) -> void:
 	var was_alive: bool = bool(unit.get("alive", true))
-	var was_shield: int = int(unit.get("shield", 0)) if not unit.is_empty() else 0
 	unit = data.duplicate(true)
-	var now_shield: int = int(unit.get("shield", 0))
 	if not bool(unit.alive):
 		if hurt_tween != null: hurt_tween.kill()
 		if rotation_tween != null: rotation_tween.kill()
@@ -107,57 +92,18 @@ func sync(data: Dictionary) -> void:
 		sprite.rotation = 0.0
 		if was_alive:
 			if death_tween != null: death_tween.kill()
-			_update_shield_glow()
-			# Fallen pose persists at low alpha until the battle ends.
-			var fall: float = -1.05 if int(unit.team) == 0 else 1.05
 			death_tween = create_tween().set_parallel(true)
-			death_tween.tween_property(sprite, "modulate", DEATH_FADE, .5)
-			death_tween.tween_property(sprite, "scale", base_scale * 0.94, .5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-			death_tween.tween_property(sprite, "rotation", fall, .5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-			death_tween.tween_property(sprite, "position:y", pose_base.y + sprite_height * 0.30, .5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			death_tween.tween_property(sprite, "modulate", Color(0.45,0.46,0.6,0.35), .35)
+			death_tween.tween_property(sprite, "scale", base_scale*0.85, .35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			death_tween.tween_property(sprite, "rotation", -.14 if int(unit.team)==0 else .14, .35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			death_tween.tween_property(sprite, "position:y", pose_base.y+10.0, .35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	elif not was_alive:
 		if death_tween != null: death_tween.kill()
 		sprite.modulate = Color.WHITE
 		sprite.rotation = 0.0
-		sprite.position = pose_base
 		sprite.scale = base_scale
 		_start_idle_breath()
-	_shield_transition(was_shield, now_shield)
 	queue_redraw()
-
-func _shield_transition(was: int, now: int) -> void:
-	if was <= 0 and now > 0:
-		shield_gained.emit(global_position)
-		var tw := create_tween()
-		tw.tween_method(_set_shield_fill, shield_fill, clampf(now / SHIELD_MAX, 0.0, 1.0), 0.25)
-	elif was > 0 and now <= 0 and bool(unit.get("alive", true)):
-		shield_broken.emit(global_position)
-	elif now > 0 and now / SHIELD_MAX < shield_fill:
-		shield_fill = clampf(now / SHIELD_MAX, 0.0, 1.0)
-		health_layer.queue_redraw()
-	_update_shield_glow()
-
-func _set_shield_fill(value: float) -> void:
-	shield_fill = value
-	health_layer.queue_redraw()
-
-func _update_shield_glow() -> void:
-	if sprite == null:
-		return
-	var amount: int = int(unit.get("shield", 0)) if bool(unit.get("alive", true)) else 0
-	if amount > 0 and atlas_texture != null and not regions.is_empty():
-		if shield_mat == null:
-			shield_mat = ShaderMaterial.new()
-			shield_mat.shader = ShieldShader
-			var tint := Color("8fdfff") if int(unit.team) == 0 else Color("ffd98a")
-			shield_mat.set_shader_parameter("outline_color", tint)
-		var atlas_size: Vector2 = atlas_texture.get_size()
-		var rect: Rect2 = regions[pose]
-		shield_mat.set_shader_parameter("region_rect", Rect2(rect.position / atlas_size, rect.size / atlas_size))
-		shield_mat.set_shader_parameter("glow_alpha", clampf(float(amount) / SHIELD_MAX, 0.0, 1.0))
-		sprite.material = shield_mat
-	else:
-		sprite.material = null
 
 func set_pose(value: int) -> void:
 	pose = clampi(value, 0, 1)
@@ -167,9 +113,6 @@ func set_pose(value: int) -> void:
 		sprite.region_rect = rect
 		pose_base = (rect.position + rect.size * 0.5 - foot) * base_scale
 		sprite.position = pose_base
-		if shield_mat != null:
-			var atlas_size: Vector2 = atlas_texture.get_size()
-			shield_mat.set_shader_parameter("region_rect", Rect2(rect.position / atlas_size, rect.size / atlas_size))
 
 func _process(delta: float) -> void:
 	elapsed += delta
@@ -200,7 +143,7 @@ func _draw() -> void:
 	health_layer.queue_redraw()
 
 func _draw_health() -> void:
-	if unit.is_empty() or font == null:return
+	if unit.is_empty():return
 	var y := -sprite_height - 35
 	var health := float(unit.hp) / maxf(1,float(unit.max_hp))
 	health_layer.draw_style_box(_panel(Color(.025,.04,.07,.9),6),Rect2(-58,y,116,34))
@@ -211,16 +154,8 @@ func _draw_health() -> void:
 	var bar := Color(.3,.85,.72) if int(unit.team)==0 else Color(.9,.37,.38)
 	if hurt_pulse>0.0:bar=bar.lerp(Color(1,.22,.18),hurt_pulse)
 	health_layer.draw_rect(Rect2(-50,y+21,100*health,5),bar)
-	# Shield cell: equal-width track joined under the HP bar, fill per caster element.
-	var shield := int(unit.get("shield",0))
-	if shield>0:
-		var track := Rect2(-50,y+28,100,4)
-		health_layer.draw_rect(track,Color("0e1420"))
-		var sc := Color("8fdfff") if int(unit.team)==0 else Color("ffd98a")
-		var frac := clampf(minf(shield_fill,float(shield)/SHIELD_MAX),0.0,1.0)
-		health_layer.draw_rect(Rect2(track.position,Vector2(track.size.x*frac,track.size.y)),sc)
-		var label := str(shield)
-		health_layer.draw_string(font,Vector2(58-font.get_string_size(label,HORIZONTAL_ALIGNMENT_LEFT,-1,11).x,y+27),label,HORIZONTAL_ALIGNMENT_LEFT,-1,11,sc)
+	if int(unit.get("shield",0))>0:
+		health_layer.draw_rect(Rect2(-50,y+28,minf(100,float(unit.shield)/float(unit.max_hp)*100),3),Color(.45,.77,1))
 	var tags := ""
 	if int(unit.get("stun",0))>0: tags += "禁锢 "
 	if int(unit.get("burn",0))>0: tags += "灼烧 "
@@ -238,40 +173,18 @@ func _panel(color: Color, radius: int) -> StyleBoxFlat:
 func hit_test(point: Vector2) -> bool:
 	return bool(unit.get("alive",false)) and Rect2(global_position+Vector2(-65,-sprite_height+35),Vector2(130,sprite_height-20)).has_point(point)
 
-func strike(target: Vector2, melee: bool, tier: int = 1) -> void:
+func strike(target: Vector2, melee: bool) -> void:
 	acting=true
 	_stop_idle_breath()
-	var windup: float = WINDUP[clampi(tier,0,2)]
 	var direction := 1.0 if int(unit.team)==0 else -1.0
 	var t := create_tween()
-	t.tween_property(self,"position",home+Vector2(-12*direction,0),windup).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	t.tween_property(self,"position",home+Vector2(-12*direction,0),.06).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	if melee:
-		t.tween_callback(_spawn_ghosts)
 		t.tween_property(self,"position",target+Vector2(-100*direction,0),.08).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_IN)
 	else:
 		t.tween_property(sprite,"position:y",pose_base.y-12,.08).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_IN)
 	await t.finished
 	set_pose(1)
-
-func _spawn_ghosts() -> void:
-	if atlas_texture == null or regions.is_empty():
-		return
-	for i in range(2):
-		var ghost := Sprite2D.new()
-		ghost.texture = atlas_texture
-		ghost.region_enabled = true
-		ghost.region_rect = regions[0]
-		ghost.scale = base_scale
-		ghost.modulate = Color(0.72, 0.82, 1.0, 0.38 - i * 0.17)
-		var parent_node := get_parent()
-		if parent_node == null:
-			return
-		parent_node.add_child(ghost)
-		ghost.global_position = sprite.global_position
-		ghost.z_index = z_index - 1
-		var tw := ghost.create_tween()
-		tw.tween_property(ghost, "modulate:a", 0.0, 0.22).set_delay(i * 0.05)
-		tw.tween_callback(ghost.queue_free)
 
 func return_home() -> void:
 	set_pose(0)
@@ -283,7 +196,7 @@ func return_home() -> void:
 	acting=false
 	_start_idle_breath()
 
-func hurt(push: float = 0.0) -> void:
+func hurt() -> void:
 	if not bool(unit.get("alive", false)):
 		return
 	if hurt_tween != null: hurt_tween.kill()
@@ -293,12 +206,9 @@ func hurt(push: float = 0.0) -> void:
 	hurt_tween.tween_property(sprite,"modulate",Color(8,4,4),.05)
 	hurt_tween.tween_property(sprite,"modulate",Color.WHITE,.12)
 	var base: Vector2 = position
-	var anchor: Vector2 = base + Vector2(push, -5.0) if absf(push) > 0.5 else base
 	jitter_tween = create_tween()
-	if anchor != base:
-		jitter_tween.tween_property(self,"position",anchor,.06).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	for i in range(3):
-		jitter_tween.tween_property(self,"position",anchor+Vector2.from_angle(randf()*TAU)*3.0,.05)
+		jitter_tween.tween_property(self,"position",base+Vector2.from_angle(randf()*TAU)*3.0,.05)
 	jitter_tween.tween_property(self,"position",base,.05)
 	pulse_tween = create_tween()
 	pulse_tween.tween_method(_set_hurt_pulse,1.0,0.0,.18)

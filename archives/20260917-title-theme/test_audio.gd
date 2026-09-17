@@ -42,7 +42,6 @@ func _run() -> void:
 		if not ResourceLoader.exists(mgr.MUSIC[key]):
 			mgr.play_music(key)
 			check(mgr.music_stream_assigns == c0 + 1, "missing music file skipped: " + str(key))
-	check(String(mgr.MUSIC["ambience"]).ends_with("title_theme.ogg"), "title theme wired to ambience key")
 	mgr.play_music("ambience")
 	check(mgr.music_stream_assigns == c0 + 2, "key switch crossfades to new track")
 	mgr.set_muted(true)

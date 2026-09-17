@@ -3,7 +3,6 @@ extends Node2D
 const Combat = preload("res://scripts/combat.gd")
 const Actor = preload("res://scripts/actor.gd")
 const Effects = preload("res://scripts/effects.gd")
-const Vfx = preload("res://scripts/skill_vfx.gd")
 const AI = preload("res://scripts/auto_policy.gd")
 const Seal = preload("res://scripts/skill_seal.gd")
 const Cinematic = preload("res://scripts/cinematic.gd")
@@ -16,7 +15,6 @@ var combat = Combat.new()
 var actors: Array = []
 var world: Node2D
 var fx: Node2D
-var vfx
 var ui: Control
 var hud: Control
 var overlay: Control
@@ -60,7 +58,6 @@ var last_kind:="slash"
 var terrain: Node2D
 var models: Node2D
 var last_points: Array[Vector2]=[]
-var last_freeze := 0.0
 var _last_hitstop := -10.0
 
 func _portrait(parent: Node,pos: Vector2,size_value: Vector2,id: int) -> TextureRect:
@@ -149,11 +146,6 @@ func _ready() -> void:
 	fx.environment.connect(_environment)
 	add_child(fx)
 	fx.z_index=80
-	vfx=Vfx.new()
-	vfx.font=FACE
-	vfx.shake.connect(func(amount: float): shake_strength=maxf(shake_strength,amount))
-	add_child(vfx)
-	vfx.z_index=84
 	models=load("res://scripts/art_fx.gd").new()
 	add_child(models)
 	cinema=Cinematic.new()
@@ -275,7 +267,6 @@ func _show_title() -> void:
 func _start_battle() -> void:
 	if overlay!=null: overlay.queue_free();overlay=null
 	fx.reset()
-	vfx.reset()
 	models.reset()
 	terrain.reset()
 	Engine.time_scale=float(speed)
@@ -383,11 +374,7 @@ func _cast(skill_index: int,target: int) -> void:
 	for i in ids:points.append(actors[i].home)
 	var themes: Array=[ ["slash","fire","fire"], ["moonbolt","heal","shield"], ["slash","stun","dragon"], ["raven","raven_fire","raven"], ["spirit","shield","miasma"], ["quake","charge","boss"] ]
 	var kind: String=themes[id][skill_index]
-	var tier: int=2 if result.ultimate else (0 if skill_index==0 else 1)
 	last_kind=kind
-	last_freeze=Vfx.freeze_for(id,skill_index) if result.ultimate else 0.0
-	if kind in ["fire","raven_fire","charge"] and not result.ultimate:
-		_environment(kind,.5)
 	var cast_sfx: String={"fire":"cast_fire","heal":"cast_heal","shield":"cast_shield","stun":"cast_stun"}.get(kind,"")
 	AudioMgr.play_unit_voice(id, "cast")
 	if cast_sfx!="":AudioMgr.play_sfx(cast_sfx)
@@ -396,12 +383,11 @@ func _cast(skill_index: int,target: int) -> void:
 		var portrait_rect: Rect2=actors[id].regions[1]
 		await cinema.start(actors[id].atlas_texture,portrait_rect,str(skill.name),realm_tint.lightened(.3))
 	var melee: bool=skill_index==0 and id in [0,2,3,5]
-	await actors[id].strike(actors[target].home,melee,tier)
+	await actors[id].strike(actors[target].home,melee)
 	last_points=points
 	models.start(id,skill_index,actors[id].position,points,bool(result.ultimate))
 	fx.modeled_primary=models.active
-	vfx.play_skill(id,skill_index,kind,actors[id].position,points,tier)
-	await fx.play(kind,actors[id].position,points,2.0 if result.ultimate else 1.0,tier)
+	await fx.play(kind,actors[id].position,points,2.0 if result.ultimate else 1.0)
 	await actors[id].return_home()
 	_log("action",result)
 	pending={}
@@ -412,21 +398,13 @@ func _cast(skill_index: int,target: int) -> void:
 
 func _impact() -> void:
 	if pending.is_empty():return
-	var ultimate: bool=bool(pending.get("ultimate",false))
-	terrain.hit(last_kind,last_points,ultimate)
+	terrain.hit(last_kind,last_points,bool(pending.get("ultimate",false)))
 	if last_kind not in ["heal","shield"]:
-		_sound("impact_heavy" if ultimate else ("impact_slash" if last_kind=="slash" else "impact_magic"))
+		_sound("impact_heavy" if bool(pending.get("ultimate",false)) else ("impact_slash" if last_kind=="slash" else "impact_magic"))
 	_show_events(pending.events)
 	_sync(pending.units)
 	_refresh_hud()
-	vfx.on_impact(ultimate,last_points)
-	if ultimate and last_freeze>0.0:_ultimate_stop()
 	_hit_stop()
-
-func _ultimate_stop() -> void:
-	Engine.time_scale=0.05
-	await get_tree().create_timer(last_freeze,true,false,true).timeout
-	if phase=="battle":Engine.time_scale=float(speed)
 
 func _hit_stop() -> void:
 	if phase!="battle" or bool(pending.get("ultimate",false)):return
@@ -444,37 +422,18 @@ func _show_events(events: Array) -> void:
 		match str(e.type):
 			"damage":
 				fx.floating(actors[id].position,str(e.value),Color("ffe3b8"),bool(pending.get("ultimate",false)))
-				actors[id].hurt(_hit_push())
+				actors[id].hurt()
 				AudioMgr.play_unit_voice(id, "hurt")
 			"heal":fx.floating(actors[id].position,"+"+str(e.value),Color("89ffcb"));_sound("heal")
-			"shield":
-				fx.floating(actors[id].position,"护盾 +"+str(e.value),Color("87dbff"));_sound("shield")
-				vfx.shield_gain(actors[id].position,int(combat.units[id].team))
+			"shield":fx.floating(actors[id].position,"护盾 +"+str(e.value),Color("87dbff"));_sound("shield")
 			"stun":fx.floating(actors[id].position,"封魂",GOLD)
-			"break":
-				vfx.shield_break_burst(actors[id].position)
-				fx.floating(actors[id].position,"破盾",Color("9fd4ff"))
 			"death":AudioMgr.play_unit_voice(id, "death")
-			"interrupt":
-				fx.floating(actors[id].position,"蓄力打断",GOLD);AudioMgr.play_sfx("charge_interrupt")
-				vfx.interrupt_flash(actors[id].position)
+			"interrupt":fx.floating(actors[id].position,"蓄力打断",GOLD);AudioMgr.play_sfx("charge_interrupt")
 			"charge":fx.floating(actors[id].position,"厄月蓄力",Color("d69aff"));AudioMgr.play_sfx("charge_start")
 			"enrage":fx.floating(actors[id].position,"荒祟 · 狂暴",Color("ff7777"))
 
-func _hit_push() -> float:
-	if pending.is_empty():return 0.0
-	var atk: int=int(pending.get("actor",0))
-	if atk<0 or atk>=combat.units.size():return 0.0
-	var direction: float=1.0 if int(combat.units[atk].team)==0 else -1.0
-	var tier: int=2 if bool(pending.get("ultimate",false)) else (0 if int(pending.get("skill",0))==0 else 1)
-	return [5.0,15.0,24.0][tier]*direction
-
 func _sync(units: Array) -> void:
 	for i in range(mini(units.size(),actors.size())):actors[i].sync(units[i])
-	var shields: Array=[]
-	for a in actors:
-		shields.append({"pos":a.home,"team":int(a.unit.get("team",0)),"shield":int(a.unit.get("shield",0)),"alive":bool(a.unit.get("alive",false))})
-	vfx.update_shields(shields)
 
 func _refresh_hud() -> void:
 	if combat.units.is_empty():return
@@ -525,7 +484,6 @@ func _finish() -> void:
 	phase="result"
 	Engine.time_scale=1.0
 	realm_target=0
-	vfx.reset()
 	for a in actors:a.active=false;a.selected=false;a.queue_redraw()
 	hud.hide()
 	banner.text=""

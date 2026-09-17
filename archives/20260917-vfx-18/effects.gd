@@ -10,9 +10,6 @@ var visual_approved:=false
 var _effects: Array[Dictionary] = []
 var _floats: Array[Dictionary] = []
 var _epoch: int = 0
-# v0.6.0 frozen timeline per tier (R7): T1 quick strike, T2 medium, T3 ultimate.
-const TIER_DURATION: Array[float] = [0.60, 0.86, 2.80]
-const TIER_PEAK: Array[float] = [0.18, 0.40, 1.55]
 
 func _ready() -> void:
 	z_index = 80
@@ -26,12 +23,9 @@ func reset() -> void:
 	set_process(false)
 	queue_redraw()
 
-func play(kind: String, origin: Vector2, targets: Array[Vector2], power: float = 1.0, tier: int = -1) -> void:
+func play(kind: String, origin: Vector2, targets: Array[Vector2], power: float = 1.0) -> void:
 	var duration: float = 2.8 if power >= 2.0 else 0.86
 	var peak: float = 1.55 if power >= 2.0 else 0.4
-	if tier >= 0:
-		duration = TIER_DURATION[clampi(tier, 0, 2)]
-		peak = TIER_PEAK[clampi(tier, 0, 2)]
 	var token: int = _epoch
 	var fx: Dictionary = {"kind": kind, "origin": origin, "targets": targets.duplicate(), "power": power, "age": 0.0, "duration": duration, "peak": peak,"modeled":modeled_primary}
 	_effects.append(fx)
@@ -40,7 +34,7 @@ func play(kind: String, origin: Vector2, targets: Array[Vector2], power: float =
 	if token != _epoch:
 		return
 	impact.emit()
-	if kind != "heal" and kind != "shield" and kind != "moonbolt":
+	if kind != "heal" and kind != "shield":
 		shake.emit(9.0 if power >= 2.0 else 4.0)
 	await get_tree().create_timer(duration - peak).timeout
 	if token == _epoch:

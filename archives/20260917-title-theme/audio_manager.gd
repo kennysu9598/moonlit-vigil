@@ -3,7 +3,7 @@ extends Node
 ## 总线在代码内建（Music/SFX 挂 Master），不依赖 default_bus_layout.tres。
 
 const MUSIC := {
-	"ambience": "res://assets/audio/title_theme.ogg",
+	"ambience": "res://assets/audio/moon_ambience_loop.wav",
 	"battle": "res://assets/audio/battle_theme.ogg",
 	"win": "res://assets/audio/win_theme.ogg",
 	"lose": "res://assets/audio/lose_theme.ogg",
